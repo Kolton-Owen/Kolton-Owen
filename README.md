@@ -1,4 +1,8 @@
-## Hi there 👋
+## Hi there 👋, welcome to my porfolio! I have a few projects I want to outline for you. 
+
+1) Network Analysis completed through Wireshark.
+2) Small Business Cybersecurity Policy (GRC)
+3) Home Lab with a SIEM through the Elastic Stack
 
 <!--
 **Kolton-Owen/Kolton-Owen** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
