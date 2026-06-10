@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Audit Console — CISA Exam Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,900&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#0E1B33;          /* deep navy ground */
+    --ink-2:#13233F;        /* panel */
+    --ink-3:#1B2F50;        /* raised panel */
+    --line:#27406B;         /* hairlines */
+    --parchment:#F4EFE2;    /* primary text */
+    --parchment-dim:#B9C2D4;/* secondary text */
+    --gold:#E0A82E;         /* certification seal gold */
+    --gold-soft:#F0C969;
+    --verify:#3DAE7C;       /* clean / pass green */
+    --finding:#D4564B;      /* finding / fail red */
+    --shadow:0 24px 60px -20px rgba(0,0,0,.6);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(224,168,46,.10), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(61,174,124,.08), transparent 55%),
+      var(--ink);
+    color:var(--parchment);
+    font-family:"Inter",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+    min-height:100%;
+    display:flex;flex-direction:column;
+  }
+  .wrap{width:100%;max-width:840px;margin:0 auto;padding:28px 20px 60px;flex:1;display:flex;flex-direction:column}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+  .eyebrow{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold)}
+
+  /* ---------- Masthead ---------- */
+  header.mast{display:flex;align-items:center;justify-content:space-between;gap:16px;border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:8px}
+  .brand{display:flex;align-items:center;gap:14px}
+  .seal{width:46px;height:46px;flex:none;position:relative}
+  .seal svg{width:100%;height:100%;display:block}
+  .brand h1{font-family:"Fraunces",serif;font-weight:900;font-size:21px;letter-spacing:-.01em;line-height:1.05}
+  .brand .sub{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--parchment-dim);margin-top:3px}
+  .rankchip{text-align:right;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--parchment-dim);letter-spacing:.04em}
+  .rankchip b{display:block;color:var(--gold);font-size:13px;letter-spacing:.06em;margin-top:2px}
+
+  /* ---------- Screens ---------- */
+  .screen{display:none;animation:rise .45s cubic-bezier(.2,.8,.2,1)}
+  .screen.on{display:block}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  /* ---------- Home ---------- */
+  .hero{padding:34px 0 22px}
+  .hero h2{font-family:"Fraunces",serif;font-weight:900;font-size:clamp(30px,7vw,46px);line-height:1.02;letter-spacing:-.02em;max-width:14ch}
+  .hero h2 em{font-style:italic;color:var(--gold)}
+  .hero p{color:var(--parchment-dim);max-width:54ch;margin-top:16px;font-size:15px}
+  .hero .outline{margin-top:22px;display:flex;flex-wrap:wrap;gap:8px}
+  .dpill{font-family:"IBM Plex Mono",monospace;font-size:11px;border:1px solid var(--line);border-radius:999px;padding:6px 11px;color:var(--parchment-dim)}
+  .dpill b{color:var(--gold)}
+
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px}
+  .mode{
+    text-align:left;cursor:pointer;background:var(--ink-2);border:1px solid var(--line);
+    border-radius:14px;padding:18px 18px 16px;color:inherit;font:inherit;position:relative;overflow:hidden;
+    transition:border-color .2s, transform .12s, background .2s;
+  }
+  .mode:hover{border-color:var(--gold);transform:translateY(-2px);background:var(--ink-3)}
+  .mode:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .mode .num{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--gold);letter-spacing:.1em}
+  .mode h3{font-family:"Fraunces",serif;font-weight:600;font-size:19px;margin:8px 0 5px}
+  .mode p{color:var(--parchment-dim);font-size:13px;line-height:1.45}
+  .mode .meta{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--parchment-dim);margin-top:12px;letter-spacing:.04em;border-top:1px dashed var(--line);padding-top:9px}
+  .modes .full{grid-column:1 / -1}
+
+  .domainpick{display:none;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+  .domainpick.on{display:grid}
+  .dbtn{cursor:pointer;background:var(--ink-2);border:1px solid var(--line);border-radius:11px;padding:13px 14px;color:inherit;font:inherit;text-align:left;transition:border-color .2s,background .2s}
+  .dbtn:hover{border-color:var(--gold);background:var(--ink-3)}
+  .dbtn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .dbtn .c{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--gold);letter-spacing:.08em}
+  .dbtn .n{font-weight:600;font-size:13.5px;margin-top:3px;line-height:1.3}
+  .dbtn .w{font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--parchment-dim);margin-top:5px}
+
+  .resetline{margin-top:26px;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--parchment-dim)}
+  .linkbtn{background:none;border:none;color:var(--gold);font-family:inherit;font-size:inherit;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:0}
+
+  /* ---------- HUD ---------- */
+  .hud{display:flex;align-items:center;gap:10px;justify-content:space-between;margin-top:6px;margin-bottom:14px;flex-wrap:wrap}
+  .hud .stat{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--parchment-dim);letter-spacing:.05em}
+  .hud .stat b{color:var(--parchment);font-size:14px}
+  .hud .score b{color:var(--gold)}
+  .streak{display:inline-flex;align-items:center;gap:6px;color:var(--gold-soft)}
+  .streak.dim{color:var(--parchment-dim);opacity:.5}
+  .progressbar{height:5px;background:var(--ink-3);border-radius:999px;overflow:hidden;margin-bottom:18px}
+  .progressbar > i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-soft));width:0;transition:width .4s ease}
+
+  /* ---------- Timer ---------- */
+  .timer{height:3px;background:var(--ink-3);border-radius:999px;overflow:hidden;margin-bottom:16px}
+  .timer > i{display:block;height:100%;background:var(--gold);width:100%;transition:width .25s linear}
+  .timer.warn > i{background:var(--finding)}
+
+  /* ---------- Question ---------- */
+  .qcard{background:var(--ink-2);border:1px solid var(--line);border-radius:16px;padding:22px 22px 20px;box-shadow:var(--shadow)}
+  .qtag{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+  .qtag .dom{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink);background:var(--gold);padding:4px 9px;border-radius:5px;font-weight:600}
+  .qtag .idx{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--parchment-dim)}
+  .qtext{font-family:"Fraunces",serif;font-weight:500;font-size:20px;line-height:1.32;letter-spacing:-.01em}
+  .opts{margin-top:18px;display:flex;flex-direction:column;gap:10px}
+  .opt{
+    display:flex;gap:13px;align-items:flex-start;text-align:left;cursor:pointer;width:100%;
+    background:var(--ink-3);border:1px solid var(--line);border-radius:11px;padding:14px 15px;color:inherit;font:inherit;
+    transition:border-color .15s, background .15s, transform .08s;
+  }
+  .opt:hover:not(:disabled){border-color:var(--gold)}
+  .opt:active:not(:disabled){transform:scale(.995)}
+  .opt:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .opt .key{font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600;color:var(--gold);border:1px solid var(--line);border-radius:6px;width:26px;height:26px;flex:none;display:grid;place-items:center;background:var(--ink-2);transition:all .15s}
+  .opt .txt{font-size:14.5px;line-height:1.45;padding-top:2px}
+  .opt.correct{border-color:var(--verify);background:rgba(61,174,124,.13)}
+  .opt.correct .key{background:var(--verify);color:#06231a;border-color:var(--verify)}
+  .opt.wrong{border-color:var(--finding);background:rgba(212,86,75,.12)}
+  .opt.wrong .key{background:var(--finding);color:#2a0c0a;border-color:var(--finding)}
+  .opt:disabled{cursor:default}
+  .opt.muted{opacity:.5}
+
+  /* ---------- Verdict / stamp ---------- */
+  .verdict{margin-top:18px;border-top:1px dashed var(--line);padding-top:16px;display:none;position:relative}
+  .verdict.on{display:block;animation:rise .3s ease}
+  .stamp{
+    position:absolute;top:6px;right:0;font-family:"Fraunces",serif;font-weight:900;font-size:15px;letter-spacing:.06em;
+    text-transform:uppercase;padding:5px 12px;border:2.5px solid;border-radius:7px;transform:rotate(-7deg);opacity:0;
+  }
+  .stamp.show{animation:slam .4s cubic-bezier(.3,1.4,.5,1) forwards}
+  .stamp.pass{color:var(--verify);border-color:var(--verify)}
+  .stamp.fail{color:var(--finding);border-color:var(--finding)}
+  @keyframes slam{0%{opacity:0;transform:rotate(-7deg) scale(2.4)}70%{opacity:1;transform:rotate(-7deg) scale(.92)}100%{opacity:.92;transform:rotate(-7deg) scale(1)}}
+  .verdict .vlabel{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:7px}
+  .verdict .vbody{font-size:14px;color:var(--parchment);line-height:1.55;max-width:62ch}
+  .verdict .vbody b{color:var(--gold-soft)}
+
+  .qfoot{margin-top:18px;display:flex;justify-content:flex-end}
+  .next{
+    cursor:pointer;background:var(--gold);color:var(--ink);border:none;border-radius:10px;
+    font-family:"Inter",sans-serif;font-weight:700;font-size:14px;padding:12px 22px;letter-spacing:.01em;
+    transition:filter .15s, transform .1s;display:inline-flex;align-items:center;gap:9px;
+  }
+  .next:hover{filter:brightness(1.07)}
+  .next:active{transform:translateY(1px)}
+  .next:focus-visible{outline:2px solid var(--gold-soft);outline-offset:3px}
+
+  /* ---------- Results ---------- */
+  .report{background:var(--ink-2);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);overflow:hidden}
+  .report-top{padding:26px 26px 22px;border-bottom:1px solid var(--line);position:relative;background:linear-gradient(180deg,var(--ink-3),var(--ink-2))}
+  .report-top .eyebrow{margin-bottom:10px}
+  .verdict-big{font-family:"Fraunces",serif;font-weight:900;font-size:clamp(28px,7vw,42px);line-height:1.04;letter-spacing:-.02em}
+  .verdict-big.pass{color:var(--verify)}
+  .verdict-big.fail{color:var(--gold)}
+  .scoreline{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--parchment-dim);margin-top:10px;letter-spacing:.04em}
+  .scoreline b{color:var(--parchment);font-size:15px}
+  .bigseal{position:absolute;top:20px;right:22px;width:74px;height:74px;opacity:.92}
+  .bigseal svg{width:100%;height:100%}
+
+  .report-body{padding:22px 26px 24px}
+  .report-body h4{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:14px}
+  .dom-row{margin-bottom:13px}
+  .dom-row .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px}
+  .dom-row .nm{font-size:13px;color:var(--parchment)}
+  .dom-row .nm span{font-family:"IBM Plex Mono",monospace;color:var(--parchment-dim);font-size:11px}
+  .dom-row .pc{font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600}
+  .meter{height:8px;background:var(--ink-3);border-radius:999px;overflow:hidden}
+  .meter > i{display:block;height:100%;width:0;border-radius:999px;transition:width .8s cubic-bezier(.2,.8,.2,1)}
+  .rating{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:4px;margin-left:8px}
+
+  .rankup{margin-top:20px;border:1px solid var(--line);border-radius:12px;padding:15px 16px;background:var(--ink-3);display:flex;align-items:center;gap:13px}
+  .rankup .ic{font-size:22px}
+  .rankup .t{font-size:13px;color:var(--parchment-dim)}
+  .rankup .t b{color:var(--gold);font-family:"Fraunces",serif;font-size:16px;display:block}
+
+  .review{margin-top:22px}
+  .review summary{cursor:pointer;font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);list-style:none;display:flex;align-items:center;gap:8px}
+  .review summary::-webkit-details-marker{display:none}
+  .review summary::before{content:"▸";transition:transform .2s}
+  .review[open] summary::before{transform:rotate(90deg)}
+  .ritem{border-top:1px solid var(--line);padding:14px 0 4px;margin-top:12px}
+  .ritem .rq{font-size:13.5px;line-height:1.4;margin-bottom:8px}
+  .ritem .ra{font-family:"IBM Plex Mono",monospace;font-size:12px;line-height:1.6}
+  .ritem .ra .x{color:var(--finding)}
+  .ritem .ra .ok{color:var(--verify)}
+
+  .report-foot{padding:20px 26px 24px;border-top:1px solid var(--line);display:flex;gap:12px;flex-wrap:wrap}
+  .btn-ghost{cursor:pointer;background:transparent;border:1px solid var(--line);color:var(--parchment);border-radius:10px;font:inherit;font-weight:600;font-size:14px;padding:12px 20px;transition:border-color .15s,background .15s}
+  .btn-ghost:hover{border-color:var(--gold);background:var(--ink-3)}
+  .btn-ghost:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+  footer.foot{margin-top:auto;padding-top:30px;font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--parchment-dim);letter-spacing:.04em;line-height:1.7;border-top:1px solid var(--line);margin-top:34px;padding-top:16px}
+  footer.foot a{color:var(--gold)}
+
+  @media(max-width:560px){
+    .modes{grid-template-columns:1fr}
+    .domainpick.on{grid-template-columns:1fr}
+    .bigseal{width:54px;height:54px;top:18px;right:18px}
+    .report-top,.report-body,.report-foot{padding-left:18px;padding-right:18px}
+    .qcard{padding:18px}
+  }
+  @media(prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="mast">
+    <div class="brand">
+      <div class="seal" aria-hidden="true">
+        <svg viewBox="0 0 100 100" fill="none">
+          <circle cx="50" cy="50" r="46" stroke="#E0A82E" stroke-width="2.5"/>
+          <circle cx="50" cy="50" r="38" stroke="#E0A82E" stroke-width="1" stroke-dasharray="3 4" opacity=".7"/>
+          <path d="M34 50l11 11 22-23" stroke="#E0A82E" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <h1>The Audit Console</h1>
+        <div class="sub">CISA&nbsp;·&nbsp;exam trainer</div>
+      </div>
+    </div>
+    <div class="rankchip" id="rankchip">
+      Career rank
+      <b id="rankName">Audit Associate</b>
+    </div>
+  </header>
+
+  <!-- ===================== HOME ===================== -->
+  <section class="screen on" id="home">
+    <div class="hero">
+      <div class="eyebrow">ISACA · 5 domains · current job-practice outline</div>
+      <h2>Train the audit<br><em>judgment</em> the exam tests.</h2>
+      <p>CISA rewards picking the <b style="color:var(--gold-soft)">best</b> answer, not just a correct one. Work scenario questions, earn an audit verdict on each, then get a domain-by-domain control report. Pick a session to begin.</p>
+      <div class="outline" id="outlinePills"></div>
+    </div>
+
+    <div class="modes">
+      <button class="mode" data-mode="quick">
+        <div class="num">01 · QUICK AUDIT</div>
+        <h3>Quick Audit</h3>
+        <p>10 weighted questions across all five domains. A fast warm-up engagement.</p>
+        <div class="meta">10 Q · 60s each · mixed</div>
+      </button>
+      <button class="mode" data-mode="mock">
+        <div class="num">02 · MOCK EXAM</div>
+        <h3>Mock Exam</h3>
+        <p>25 questions weighted to the real exam blueprint, on a tighter clock.</p>
+        <div class="meta">25 Q · 45s each · graded /450</div>
+      </button>
+      <button class="mode full" data-mode="domain" id="domainToggle">
+        <div class="num">03 · DOMAIN DRILL</div>
+        <h3>Domain Drill</h3>
+        <p>Target one weak domain. Choose below — all questions drawn from that area.</p>
+        <div class="meta">focused · 60s each · choose a domain ▾</div>
+      </button>
+    </div>
+
+    <div class="domainpick" id="domainPick"></div>
+
+    <div class="resetline">
+      Lifetime XP: <span class="mono" id="xpView">0</span>
+      &nbsp;·&nbsp;<button class="linkbtn" id="resetBtn">reset progress</button>
+    </div>
+  </section>
+
+  <!-- ===================== QUIZ ===================== -->
+  <section class="screen" id="quiz">
+    <div class="hud">
+      <div class="stat">Q <b id="qNow">1</b><span style="color:var(--parchment-dim)"> / </span><b id="qTotal">10</b></div>
+      <div class="stat streak dim" id="streakBox">🔥 streak <b id="streakVal">0</b></div>
+      <div class="stat score">Score <b id="scoreVal">0</b></div>
+    </div>
+    <div class="progressbar"><i id="progFill"></i></div>
+    <div class="timer" id="timerBar"><i id="timerFill"></i></div>
+
+    <div class="qcard">
+      <div class="qtag">
+        <span class="dom" id="qDom">D1</span>
+        <span class="idx" id="qDomName">Auditing Process</span>
+      </div>
+      <div class="qtext" id="qText">Question</div>
+      <div class="opts" id="opts"></div>
+
+      <div class="verdict" id="verdict">
+        <div class="stamp" id="stamp">Verified</div>
+        <div class="vlabel" id="vLabel">Auditor's note</div>
+        <div class="vbody" id="vBody"></div>
+      </div>
+
+      <div class="qfoot">
+        <button class="next" id="nextBtn" style="display:none">Next question →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== RESULTS ===================== -->
+  <section class="screen" id="results">
+    <div class="report">
+      <div class="report-top">
+        <div class="bigseal" id="bigSeal" aria-hidden="true"></div>
+        <div class="eyebrow">Audit report · engagement complete</div>
+        <div class="verdict-big" id="bigVerdict">Opinion: Unqualified</div>
+        <div class="scoreline" id="bigScore"></div>
+      </div>
+      <div class="report-body">
+        <h4>Control effectiveness by domain</h4>
+        <div id="domBreakdown"></div>
+
+        <div class="rankup" id="rankUp" style="display:none">
+          <div class="ic">🎖️</div>
+          <div class="t">Career rank<b id="rankUpName"></b></div>
+        </div>
+
+        <details class="review" id="reviewBox">
+          <summary>Review flagged items</summary>
+          <div id="reviewList"></div>
+        </details>
+      </div>
+      <div class="report-foot">
+        <button class="next" id="againBtn">Run another engagement →</button>
+        <button class="btn-ghost" id="homeBtn">Back to console</button>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    Self-contained trainer · runs offline in any browser · progress saved locally on this device.<br>
+    Questions are original practice items written to ISACA's current CISA job-practice outline (18/18/12/26/26). Not affiliated with or endorsed by ISACA.
+  </footer>
+</div>
+
+<script>
+/* =========================================================
+   CISA — THE AUDIT CONSOLE
+   Single-file trainer. No dependencies. Original questions.
+   ========================================================= */
+
+const DOMAINS = {
+  D1:{name:"Auditing Process", full:"Information Systems Auditing Process", w:18},
+  D2:{name:"Governance & Mgmt", full:"Governance & Management of IT", w:18},
+  D3:{name:"Acquisition & Dev", full:"IS Acquisition, Development & Implementation", w:12},
+  D4:{name:"Operations & Resilience", full:"IS Operations & Business Resilience", w:26},
+  D5:{name:"Protecting Assets", full:"Protection of Information Assets", w:26},
+};
+
+/* answer index is 0-based. Explanations teach the "why this is BEST". */
+const BANK = [
+  /* ---------------- DOMAIN 1 ---------------- */
+  {d:"D1",q:"While reviewing a completed audit, an IS auditor finds that the sample chosen was too small to support the conclusions reached. What should the auditor do FIRST?",
+   o:["Issue the report with a disclaimer","Re-perform the test with a statistically valid sample","Report the original conclusion as a finding","Ask management to accept the risk"],a:1,
+   e:"The integrity of the conclusion depends on sufficient, appropriate evidence. Before reporting anything, the auditor must <b>gather enough evidence</b> — here, re-test with a valid sample. A disclaimer or report comes only after adequate work is done."},
+  {d:"D1",q:"An IS auditor is determining the audit scope using a risk-based approach. Which factor is MOST important in deciding where to focus testing?",
+   o:["The size of each department's budget","Areas with the highest inherent and residual risk","The preferences of the audit committee chair","Systems that were audited least recently"],a:1,
+   e:"Risk-based auditing directs effort toward areas where <b>risk to the organization is greatest</b>. Recency or budget can inform planning but don't override a risk assessment."},
+  {d:"D1",q:"Which of the following provides the MOST reliable audit evidence?",
+   o:["A screenshot supplied by the system owner","A signed management representation letter","Data the auditor extracts directly from the production system","An interview with the application administrator"],a:2,
+   e:"Evidence is most reliable when it is <b>obtained independently by the auditor</b> from the source system. Evidence supplied by the auditee or based on assertion is weaker and more easily manipulated."},
+  {d:"D1",q:"An IS auditor performs compliance testing rather than substantive testing PRIMARILY to:",
+   o:["Quantify the dollar value of an error","Confirm that controls are operating as intended","Detect material misstatements directly","Replace the need for a control environment review"],a:1,
+   e:"<b>Compliance testing</b> evaluates whether controls operate as designed. <b>Substantive testing</b> measures the actual magnitude of errors. The two answer different questions."},
+  {d:"D1",q:"The PRIMARY reason an IS auditor uses computer-assisted audit techniques (CAATs) is to:",
+   o:["Reduce the need for an audit charter","Test 100% of a large population efficiently","Eliminate the need for professional judgment","Avoid documenting the audit methodology"],a:1,
+   e:"CAATs let the auditor analyze <b>entire populations</b> instead of small samples, improving coverage and detecting anomalies that sampling might miss. Judgment and documentation are still required."},
+  {d:"D1",q:"During fieldwork an auditor discovers a possible fraud by a senior manager. What is the BEST course of action?",
+   o:["Confront the manager privately to confirm intent","Continue testing and note it in the final report only","Report it promptly to the appropriate authority per the escalation policy","Expand the sample to gather more evidence before telling anyone"],a:2,
+   e:"Suspected fraud must be <b>escalated promptly</b> through the established channel (e.g., audit committee / legal), preserving independence and not tipping off the subject. The auditor does not investigate as an interrogator or sit on it."},
+  {d:"D1",q:"An IS auditor sets a lower materiality threshold for a particular system. The MOST likely reason is that the system:",
+   o:["Is scheduled for decommissioning","Processes data critical to financial reporting","Has a large user base","Was developed in-house"],a:1,
+   e:"Materiality reflects how much an error <b>matters to stakeholders</b>. Systems feeding critical financial reporting warrant a lower threshold because small errors can have large consequences."},
+  {d:"D1",q:"The PRIMARY purpose of a follow-up (post-audit) review is to:",
+   o:["Re-audit the entire process from scratch","Verify that agreed remediation has been implemented effectively","Assign blame for the original findings","Update the audit universe"],a:1,
+   e:"Follow-up confirms that management's <b>corrective actions were actually implemented and are working</b> — closing the loop on prior findings rather than re-auditing everything."},
+
+  /* ---------------- DOMAIN 2 ---------------- */
+  {d:"D2",q:"Who is ULTIMATELY accountable for IT governance in an organization?",
+   o:["The chief information officer","The IT steering committee","The board of directors","The IS audit function"],a:2,
+   e:"Governance is a <b>board-level</b> responsibility. The CIO and steering committee execute and advise, but ultimate accountability for direction and oversight rests with the board."},
+  {d:"D2",q:"An IS auditor reviews IT strategy. The MOST important thing to confirm is that the IT strategy:",
+   o:["Specifies preferred technology vendors","Is aligned with the organization's business objectives","Is longer than three years","Is approved by the IT department"],a:1,
+   e:"IT exists to enable the business. The central test of any IT strategy is <b>alignment with business goals</b> — technology choices and time horizons are secondary."},
+  {d:"D2",q:"The PRIMARY role of an IT steering committee is to:",
+   o:["Write application source code","Prioritize and approve IT investments in line with business needs","Perform penetration testing","Administer user accounts"],a:1,
+   e:"A steering committee provides <b>direction and prioritization</b> — deciding which IT initiatives get funded based on business value. Operational tasks belong to IT staff."},
+  {d:"D2",q:"For a data classification scheme to be effective, who should be responsible for assigning the classification level to a given data set?",
+   o:["The data custodian (e.g., DBA)","The data owner","The information security officer","Any end user who accesses it"],a:1,
+   e:"The <b>data owner</b>, who understands the business value and sensitivity of the data, assigns its classification. The custodian protects it per that classification; security advises."},
+  {d:"D2",q:"What is the key difference between a key performance indicator (KPI) and a key risk indicator (KRI)?",
+   o:["KPIs are financial; KRIs are technical","A KPI measures progress toward a goal; a KRI signals rising exposure to risk","KPIs are for audit; KRIs are for management","There is no meaningful difference"],a:1,
+   e:"A <b>KPI</b> tells you how well you're achieving an objective. A <b>KRI</b> is a forward-looking signal that <b>risk is increasing</b> — an early warning, not a performance score."},
+  {d:"D2",q:"An organization outsources a critical process to a cloud provider. Which is the MOST important control for the auditor to verify?",
+   o:["The provider's office is in the same country","A right-to-audit or independent assurance (e.g., SOC 2) clause exists in the contract","The provider uses the same antivirus product","The provider's logo appears on the company website"],a:1,
+   e:"Outsourcing transfers operations but not accountability. The organization needs <b>contractual assurance</b> — a right-to-audit clause or independent attestation — to gain visibility into the provider's controls."},
+  {d:"D2",q:"The PRIMARY benefit of an enterprise architecture (EA) is that it:",
+   o:["Guarantees zero downtime","Provides a structured view linking IT capabilities to business strategy","Replaces the need for a disaster recovery plan","Eliminates the need for change management"],a:1,
+   e:"EA gives leadership a <b>coherent map</b> from business strategy down through processes, data, applications and infrastructure — enabling aligned, non-duplicative decisions."},
+  {d:"D2",q:"An IS auditor finds that IT risk has no defined owner. The GREATEST concern is that:",
+   o:["Risks may be identified but never treated or monitored","The audit will take longer","Insurance premiums may rise","Staff morale could suffer"],a:0,
+   e:"Without clear <b>ownership</b>, risks fall through the cracks — nobody is accountable for accepting, mitigating, or monitoring them, so treatment decisions are never made or tracked."},
+
+  /* ---------------- DOMAIN 3 ---------------- */
+  {d:"D3",q:"The MOST important consideration when reviewing a business case for a new system is whether it:",
+   o:["Uses the newest available technology","Demonstrates that benefits justify the costs and align with strategy","Was written by a certified project manager","Includes a detailed Gantt chart"],a:1,
+   e:"A business case must show the investment is <b>justified and strategically aligned</b> — that expected benefits outweigh costs and risks. Technology novelty and formatting are not the test."},
+  {d:"D3",q:"Building security controls in during the requirements and design phases of the SDLC rather than after deployment is preferable PRIMARILY because it:",
+   o:["Looks better to auditors","Is significantly cheaper and more effective than retrofitting","Eliminates the need for testing","Is required by every framework"],a:1,
+   e:"Designing security in early (\"shift left\") is far <b>cheaper and more robust</b> than bolting controls on after release, when changes are costly and gaps are already exposed."},
+  {d:"D3",q:"Which data conversion / changeover approach carries the LOWEST risk when migrating to a new critical system?",
+   o:["Direct (big-bang) cutover","Parallel run of old and new systems","Deleting the legacy data immediately","Skipping reconciliation to save time"],a:1,
+   e:"A <b>parallel run</b> operates old and new systems together so outputs can be reconciled before retiring the legacy system — the safest, though more costly, approach for critical systems."},
+  {d:"D3",q:"The PRIMARY purpose of a post-implementation review is to:",
+   o:["Assign bonuses to the project team","Determine whether the system delivered the expected benefits and controls","Begin planning the next project","Decommission the test environment"],a:1,
+   e:"A post-implementation review evaluates whether the delivered system <b>met its objectives, benefits and control requirements</b> — and captures lessons learned for future projects."},
+  {d:"D3",q:"An auditor reviewing application development is MOST concerned to find that:",
+   o:["Developers have access to deploy their own code directly to production","The project used an agile methodology","Unit tests are automated","Requirements were documented"],a:0,
+   e:"Developers pushing their own code straight to production breaks <b>segregation of duties</b> and change control — a major risk that allows unauthorized or untested changes into the live environment."},
+
+  /* ---------------- DOMAIN 4 ---------------- */
+  {d:"D4",q:"What is the PRIMARY output of a business impact analysis (BIA)?",
+   o:["A list of firewall rules","Identification of critical processes with their recovery priorities and timeframes","A penetration test report","An updated org chart"],a:1,
+   e:"A BIA identifies <b>critical processes and the impact of their disruption</b>, producing recovery priorities and the RTO/RPO targets that drive the continuity and DR plans."},
+  {d:"D4",q:"The recovery point objective (RPO) defines the:",
+   o:["Maximum tolerable time to restore a service","Maximum acceptable amount of data loss measured in time","Cost of the recovery site","Number of staff needed to recover"],a:1,
+   e:"<b>RPO</b> answers \"how much data can we afford to lose?\" — expressed as a point in time. It drives backup frequency. (RTO answers \"how fast must we be back?\")"},
+  {d:"D4",q:"An organization needs the fastest possible recovery for a mission-critical system. Which recovery site is MOST appropriate?",
+   o:["Cold site","Warm site","Hot site","Mobile site"],a:2,
+   e:"A <b>hot site</b> is fully equipped and continuously updated, enabling near-immediate failover. Cold and warm sites trade lower cost for longer recovery time."},
+  {d:"D4",q:"Which is the MOST important control over changes to a production environment?",
+   o:["Changes are made only by the most senior developer","All changes are authorized, tested, and approved before implementation","Changes are deployed only on weekends","Changes are announced by email"],a:1,
+   e:"Effective change management requires that every change be <b>authorized, tested, and approved</b> before going live — providing accountability and reducing the risk of unauthorized or breaking changes."},
+  {d:"D4",q:"How do incident management and problem management differ?",
+   o:["They are identical","Incident management restores service quickly; problem management finds and removes the root cause","Problem management is only for hardware","Incident management is performed only by auditors"],a:1,
+   e:"<b>Incident management</b> focuses on restoring normal service as fast as possible. <b>Problem management</b> investigates the <b>underlying root cause</b> to prevent recurrence."},
+  {d:"D4",q:"An auditor reviewing patch management is MOST concerned that:",
+   o:["Patches are tested before deployment","Critical security patches remain unapplied for months on internet-facing systems","Patches are tracked in a ticketing tool","A maintenance window exists"],a:1,
+   e:"Unpatched, internet-facing systems are a leading attack vector. Long delays in applying <b>critical security patches</b> leave known, exploitable vulnerabilities exposed."},
+  {d:"D4",q:"The PRIMARY goal of capacity management is to ensure that:",
+   o:["Storage is always 100% full","IT resources meet current and forecasted business demand cost-effectively","No new hardware is ever purchased","Users cannot exceed disk quotas"],a:1,
+   e:"Capacity management ensures resources are sufficient to <b>meet demand now and in the future</b> without over- or under-provisioning — balancing performance against cost."},
+  {d:"D4",q:"A full DR test that runs the actual recovery procedures at the alternate site, with systems failed over, is known as a:",
+   o:["Checklist test","Tabletop / walkthrough test","Full-interruption (or parallel) test","Structured review"],a:2,
+   e:"A <b>full-interruption test</b> actually fails operations over to the recovery site — the most thorough and realistic, but also the most disruptive and risky to run."},
+  {d:"D4",q:"In a relational database, referential integrity PRIMARILY ensures that:",
+   o:["All tables are encrypted","A foreign key value always matches an existing primary key (no orphan records)","Backups run nightly","Users have read-only access"],a:1,
+   e:"Referential integrity guarantees that relationships between tables stay valid — a <b>foreign key must reference an existing record</b>, preventing orphaned, inconsistent data."},
+  {d:"D4",q:"The GREATEST risk of unmanaged end-user computing (shadow IT) is that:",
+   o:["It increases the help desk's workload","Critical data is processed in spreadsheets/tools outside IT controls, with no backup, change control, or oversight","Users learn new skills","Software licenses are over-purchased"],a:1,
+   e:"Shadow IT means business-critical processing happens <b>outside formal IT governance</b> — without access control, change management, testing, or backups — creating hidden integrity and continuity risks."},
+  {d:"D4",q:"An organization uses incremental backups during the week and a full backup on Sunday. To restore Wednesday's data, you need:",
+   o:["Only Wednesday's incremental backup","Sunday's full backup plus each incremental through Wednesday","Only Sunday's full backup","Any single backup will do"],a:1,
+   e:"Incremental backups capture only changes since the <b>last backup</b>. Restoration requires the last <b>full</b> backup plus <b>every incremental</b> in sequence up to the target point."},
+  {d:"D4",q:"The MOST important reason to review operational (event) logs regularly is to:",
+   o:["Fill up storage space","Detect anomalies, errors, and unauthorized activity in a timely manner","Satisfy curiosity","Replace the need for backups"],a:1,
+   e:"Log review provides <b>detective control</b> — surfacing errors, performance issues, and signs of unauthorized or malicious activity while there is still time to respond."},
+
+  /* ---------------- DOMAIN 5 ---------------- */
+  {d:"D5",q:"The principle of least privilege requires that a user be granted:",
+   o:["All permissions of their department","Only the access required to perform their specific job duties","Administrator rights for convenience","Access that never changes"],a:1,
+   e:"Least privilege limits each identity to the <b>minimum access needed</b> to do the job — shrinking the attack surface and the damage a compromised or misused account can do."},
+  {d:"D5",q:"Which combination represents true multi-factor authentication?",
+   o:["A password and a PIN","A password and a one-time code from a hardware token","Two different passwords","A username and a password"],a:1,
+   e:"MFA combines factors of <b>different types</b>: something you know (password) + something you have (token) + something you are (biometric). Two passwords are the same factor type, so not MFA."},
+  {d:"D5",q:"In public key infrastructure (PKI), a sender creates a digital signature by encrypting a message digest with their:",
+   o:["Public key","Private key","Symmetric session key","Recipient's public key"],a:1,
+   e:"Signing uses the sender's <b>private key</b>; anyone can verify with the sender's public key. This provides authenticity and <b>non-repudiation</b> — only the holder of the private key could have signed."},
+  {d:"D5",q:"Compared with symmetric encryption, asymmetric (public-key) encryption is:",
+   o:["Faster but less secure","Slower, but solves secure key distribution","Identical in every way","Only used for hashing"],a:1,
+   e:"Asymmetric crypto is computationally <b>slower</b> but elegantly solves <b>key distribution</b> — no shared secret must travel a risky channel. Hybrid schemes use it to exchange a fast symmetric key."},
+  {d:"D5",q:"What is the PRIMARY difference between an IDS and an IPS?",
+   o:["An IDS detects and alerts; an IPS can also block malicious traffic inline","An IPS only logs; an IDS blocks","They are the same device","An IDS encrypts traffic"],a:0,
+   e:"An <b>IDS</b> detects and alerts on suspicious activity. An <b>IPS</b> sits inline and can <b>actively block or drop</b> malicious traffic — prevention rather than just detection."},
+  {d:"D5",q:"The MOST effective defense against social-engineering attacks such as phishing is:",
+   o:["A stronger firewall","Ongoing security awareness training combined with technical email controls","Longer passwords","Disabling all email"],a:1,
+   e:"Social engineering targets <b>people</b>, so the human layer matters most: sustained <b>awareness training</b> backed by technical controls (filtering, MFA) addresses the actual attack vector."},
+  {d:"D5",q:"The PRIMARY purpose of data loss prevention (DLP) technology is to:",
+   o:["Speed up the network","Detect and prevent unauthorized exfiltration of sensitive data","Encrypt all backups","Manage user passwords"],a:1,
+   e:"DLP monitors data in use, in motion, and at rest to <b>identify and block sensitive information from leaving</b> the organization through unauthorized channels."},
+  {d:"D5",q:"Segregation of duties is BEST described as a control that:",
+   o:["Requires two people to know the same password","Divides a critical task so no single person controls it end to end","Backs up data to two locations","Encrypts data twice"],a:1,
+   e:"Segregation of duties splits sensitive functions (e.g., initiate vs. approve a payment) so that <b>no one individual can complete and conceal</b> a fraudulent or erroneous transaction alone."},
+  {d:"D5",q:"What is the KEY risk introduced by single sign-on (SSO)?",
+   o:["Users must remember more passwords","A compromise of the single credential grants access to all linked systems","It cannot be used with MFA","It slows authentication"],a:1,
+   e:"SSO improves usability but concentrates risk: if that <b>one credential is compromised</b>, the attacker reaches every connected application. This is why SSO should be paired with strong MFA."},
+  {d:"D5",q:"An organization wants to protect cardholder data while it is stored in a database. This is BEST addressed by:",
+   o:["Encryption of data at rest","TLS for the website","A clean-desk policy","A faster backup schedule"],a:0,
+   e:"Protecting stored data calls for <b>encryption at rest</b>. TLS protects data <b>in transit</b>; both are needed, but the question concerns data sitting in the database."},
+  {d:"D5",q:"How does a penetration test differ from a vulnerability scan?",
+   o:["They are identical","A scan identifies potential weaknesses; a pen test actively exploits them to prove impact","A pen test only runs automated tools","A scan requires physical access"],a:1,
+   e:"A <b>vulnerability scan</b> enumerates possible weaknesses. A <b>penetration test</b> goes further — attempting to <b>exploit</b> them to demonstrate real, chainable impact and validate which findings truly matter."},
+  {d:"D5",q:"When an employee is terminated, the MOST important access-control action is to:",
+   o:["Archive their email for a year","Disable their accounts and revoke access immediately","Send a company-wide announcement","Wait until the next access review cycle"],a:1,
+   e:"Terminated users are a top insider-threat vector. Access should be <b>revoked immediately</b> (ideally automated via the HR/joiner-mover-leaver process) to prevent retaliatory or unauthorized use."},
+];
+
+/* ---------- Rank ladder (lifetime XP) ---------- */
+const RANKS = [
+  {min:0,name:"Audit Associate"},
+  {min:600,name:"Staff IS Auditor"},
+  {min:1600,name:"Senior IS Auditor"},
+  {min:3200,name:"Audit Manager"},
+  {min:5500,name:"IT Audit Director"},
+  {min:8500,name:"CISA — Certified"},
+];
+function rankFor(xp){let r=RANKS[0];for(const x of RANKS){if(xp>=x.min)r=x;}return r;}
+
+/* ---------- Persistence (localStorage; safe fallback) ---------- */
+const STORE_KEY="cisa_audit_console_v1";
+function loadStore(){
+  try{const r=localStorage.getItem(STORE_KEY);return r?JSON.parse(r):{xp:0};}
+  catch(e){return {xp:0};}
+}
+function saveStore(s){try{localStorage.setItem(STORE_KEY,JSON.stringify(s));}catch(e){}}
+let store=loadStore();
+
+/* ---------- DOM ---------- */
+const $=id=>document.getElementById(id);
+const screens={home:$("home"),quiz:$("quiz"),results:$("results")};
+function show(name){for(const k in screens)screens[k].classList.toggle("on",k===name);window.scrollTo({top:0,behavior:"smooth"});}
+
+/* ---------- Build home pills + domain picker ---------- */
+(function buildHome(){
+  const pills=$("outlinePills");
+  Object.entries(DOMAINS).forEach(([code,d])=>{
+    const s=document.createElement("span");s.className="dpill";
+    s.innerHTML=`${code} ${d.name} <b>${d.w}%</b>`;pills.appendChild(s);
+  });
+  const pick=$("domainPick");
+  Object.entries(DOMAINS).forEach(([code,d])=>{
+    const b=document.createElement("button");b.className="dbtn";b.dataset.domain=code;
+    b.innerHTML=`<div class="c">DOMAIN ${code.slice(1)}</div><div class="n">${d.full}</div><div class="w">${d.w}% of exam</div>`;
+    b.addEventListener("click",()=>startSession("domain",code));
+    pick.appendChild(b);
+  });
+  $("rankName").textContent=rankFor(store.xp).name;
+  $("xpView").textContent=store.xp.toLocaleString();
+})();
+
+/* ---------- Mode buttons ---------- */
+document.querySelectorAll(".mode").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    const m=btn.dataset.mode;
+    if(m==="domain"){$("domainPick").classList.toggle("on");return;}
+    startSession(m);
+  });
+});
+$("resetBtn").addEventListener("click",()=>{
+  if(confirm("Reset all lifetime XP and rank on this device?")){
+    store={xp:0};saveStore(store);
+    $("rankName").textContent=rankFor(0).name;$("xpView").textContent="0";
+  }
+});
+
+/* ---------- Session state ---------- */
+let session=null;
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;};
+
+function weightedPick(n){
+  /* draw n questions roughly matching domain exam weights */
+  const byDom={};Object.keys(DOMAINS).forEach(d=>byDom[d]=shuffle(BANK.filter(q=>q.d===d)));
+  const targets={};let assigned=0;
+  Object.entries(DOMAINS).forEach(([d,info])=>{targets[d]=Math.round(n*info.w/100);assigned+=targets[d];});
+  /* fix rounding */
+  let diff=n-assigned;const order=Object.keys(DOMAINS).sort((a,b)=>DOMAINS[b].w-DOMAINS[a].w);
+  let oi=0;while(diff!==0){const d=order[oi%order.length];targets[d]+=diff>0?1:-1;diff+=diff>0?-1:1;oi++;}
+  let out=[];
+  Object.keys(DOMAINS).forEach(d=>{out=out.concat(byDom[d].slice(0,Math.max(0,targets[d])));});
+  /* top up if short (small bank) */
+  if(out.length<n){const rest=shuffle(BANK.filter(q=>!out.includes(q)));out=out.concat(rest.slice(0,n-out.length));}
+  return shuffle(out).slice(0,n);
+}
+
+function startSession(mode,domain){
+  let qs, perQ, label, maxScore;
+  if(mode==="quick"){qs=weightedPick(10);perQ=60;label="Quick Audit";}
+  else if(mode==="mock"){qs=weightedPick(Math.min(25,BANK.length));perQ=45;label="Mock Exam";}
+  else {qs=shuffle(BANK.filter(q=>q.d===domain));perQ=60;label=DOMAINS[domain].full;}
+  session={mode,domain,qs,perQ,i:0,score:0,streak:0,bestStreak:0,correct:0,
+           perDom:{},answers:[],label};
+  Object.keys(DOMAINS).forEach(d=>session.perDom[d]={c:0,t:0});
+  $("qTotal").textContent=qs.length;
+  show("quiz");renderQuestion();
+}
+
+/* ---------- Timer ---------- */
+let timer=null,timeLeft=0,answered=false;
+function startTimer(){
+  clearInterval(timer);timeLeft=session.perQ;answered=false;
+  const fill=$("timerFill"),bar=$("timerBar");
+  fill.style.width="100%";bar.classList.remove("warn");
+  const t0=Date.now();
+  timer=setInterval(()=>{
+    const elapsed=(Date.now()-t0)/1000;timeLeft=session.perQ-elapsed;
+    const pct=Math.max(0,timeLeft/session.perQ*100);
+    fill.style.width=pct+"%";
+    if(pct<25)bar.classList.add("warn");
+    if(timeLeft<=0){clearInterval(timer);if(!answered)lockAnswer(-1,0);}
+  },100);
+}
+
+/* ---------- Render question ---------- */
+const KEYS=["A","B","C","D"];
+function renderQuestion(){
+  const q=session.qs[session.i];
+  $("qNow").textContent=session.i+1;
+  $("progFill").style.width=((session.i)/session.qs.length*100)+"%";
+  $("qDom").textContent=q.d;
+  $("qDomName").textContent=DOMAINS[q.d].name;
+  $("qText").textContent=q.q;
+  $("scoreVal").textContent=session.score;
+  const sb=$("streakBox");
+  $("streakVal").textContent=session.streak;
+  sb.classList.toggle("dim",session.streak<2);
+
+  const opts=$("opts");opts.innerHTML="";
+  /* shuffle options but track correct index */
+  const order=shuffle(q.o.map((t,idx)=>({t,idx})));
+  session._order=order;
+  order.forEach((item,pos)=>{
+    const b=document.createElement("button");b.className="opt";b.dataset.pos=pos;
+    b.innerHTML=`<span class="key">${KEYS[pos]}</span><span class="txt">${item.t}</span>`;
+    b.addEventListener("click",()=>{ if(!answered){const speed=Math.max(0,timeLeft/session.perQ);lockAnswer(pos,speed);} });
+    opts.appendChild(b);
+  });
+  $("verdict").classList.remove("on");
+  $("stamp").classList.remove("show");
+  $("nextBtn").style.display="none";
+  startTimer();
+}
+
+/* ---------- Lock answer ---------- */
+function lockAnswer(pos,speed){
+  answered=true;clearInterval(timer);
+  const q=session.qs[session.i];
+  const order=session._order;
+  const correctPos=order.findIndex(o=>o.idx===q.a);
+  const chosenCorrect = pos===correctPos;
+
+  /* score: base + time bonus + streak multiplier */
+  let gained=0;
+  if(chosenCorrect){
+    session.correct++;
+    session.streak++;
+    session.bestStreak=Math.max(session.bestStreak,session.streak);
+    const base=100;
+    const timeBonus=Math.round(60*speed);
+    const mult=1+Math.min(session.streak-1,5)*0.1; /* up to +50% */
+    gained=Math.round((base+timeBonus)*mult);
+    session.score+=gained;
+  } else {
+    session.streak=0;
+  }
+  session.perDom[q.d].t++;if(chosenCorrect)session.perDom[q.d].c++;
+  const chosenText = pos===-1 ? "(no answer — time expired)" : order[pos].t;
+  session.answers.push({q,chosenText,chosenCorrect});
+
+  /* paint options */
+  document.querySelectorAll(".opt").forEach((b,idx)=>{
+    b.disabled=true;
+    const p=+b.dataset.pos;
+    if(p===correctPos)b.classList.add("correct");
+    else if(p===pos)b.classList.add("wrong");
+    else b.classList.add("muted");
+  });
+
+  /* verdict + stamp */
+  const stamp=$("stamp");
+  stamp.textContent=chosenCorrect?"Verified":"Finding";
+  stamp.className="stamp "+(chosenCorrect?"pass":"fail");
+  void stamp.offsetWidth; stamp.classList.add("show");
+  $("vLabel").textContent=chosenCorrect
+      ? (gained>0?`Clean — +${gained} pts${session.streak>=2?"  ·  🔥 streak "+session.streak:""}`:"Correct")
+      : (pos===-1?"Time expired — logged as a finding":"Finding — control gap");
+  $("vBody").innerHTML=q.e;
+  $("verdict").classList.add("on");
+
+  $("scoreVal").textContent=session.score;
+  $("streakVal").textContent=session.streak;
+  $("streakBox").classList.toggle("dim",session.streak<2);
+  $("progFill").style.width=((session.i+1)/session.qs.length*100)+"%";
+
+  const nb=$("nextBtn");
+  nb.style.display="inline-flex";
+  nb.textContent = session.i+1<session.qs.length ? "Next question →" : "Sign off report →";
+  nb.focus();
+}
+
+$("nextBtn").addEventListener("click",()=>{
+  if(session.i+1<session.qs.length){session.i++;renderQuestion();}
+  else finishSession();
+});
+
+/* keyboard: A-D to answer, Enter to advance */
+document.addEventListener("keydown",e=>{
+  if(!screens.quiz.classList.contains("on"))return;
+  if(!answered){
+    const k=e.key.toUpperCase();const pos=KEYS.indexOf(k);
+    if(pos>-1){const btn=document.querySelector(`.opt[data-pos="${pos}"]`);if(btn){const speed=Math.max(0,timeLeft/session.perQ);lockAnswer(pos,speed);}}
+  } else if(e.key==="Enter"){$("nextBtn").click();}
+});
+
+/* ---------- Finish / report ---------- */
+const SEAL_PASS=`<svg viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="46" stroke="#3DAE7C" stroke-width="3"/><circle cx="50" cy="50" r="37" stroke="#3DAE7C" stroke-width="1" stroke-dasharray="2 4"/><path d="M33 51l11 11 24-26" stroke="#3DAE7C" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const SEAL_FAIL=`<svg viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="46" stroke="#E0A82E" stroke-width="3"/><circle cx="50" cy="50" r="37" stroke="#E0A82E" stroke-width="1" stroke-dasharray="2 4"/><path d="M50 30v26" stroke="#E0A82E" stroke-width="6" stroke-linecap="round"/><circle cx="50" cy="68" r="3.6" fill="#E0A82E"/></svg>`;
+
+function finishSession(){
+  clearInterval(timer);
+  const total=session.qs.length;
+  const pct=Math.round(session.correct/total*100);
+  const passed=pct>=75; /* mirrors the spirit of CISA's scaled 450/800 pass */
+
+  /* award xp */
+  const xpGain=session.score+(passed?200:0);
+  store.xp+=xpGain;
+  const beforeRank=rankFor(store.xp-xpGain).name;
+  const nowRank=rankFor(store.xp).name;
+  saveStore(store);
+  $("rankName").textContent=nowRank;$("xpView").textContent=store.xp.toLocaleString();
+
+  /* header */
+  $("bigSeal").innerHTML=passed?SEAL_PASS:SEAL_FAIL;
+  const bv=$("bigVerdict");
+  bv.className="verdict-big "+(passed?"pass":"fail");
+  bv.textContent=passed?"Opinion: Unqualified ✓":"Opinion: Qualified — gaps noted";
+  $("bigScore").innerHTML=`${session.label} · <b>${session.correct}/${total}</b> correct (<b>${pct}%</b>) · <b>${session.score.toLocaleString()}</b> pts · best streak <b>${session.bestStreak}</b>`;
+
+  /* domain breakdown */
+  const bd=$("domBreakdown");bd.innerHTML="";
+  Object.entries(DOMAINS).forEach(([code,info])=>{
+    const pd=session.perDom[code];
+    if(pd.t===0)return;
+    const p=Math.round(pd.c/pd.t*100);
+    let rate,col;
+    if(p>=80){rate="Effective";col="var(--verify)";}
+    else if(p>=50){rate="Needs work";col="var(--gold)";}
+    else {rate="Deficient";col="var(--finding)";}
+    const row=document.createElement("div");row.className="dom-row";
+    row.innerHTML=`<div class="top">
+        <div class="nm">${info.full} <span>· ${code}</span></div>
+        <div class="pc" style="color:${col}">${pd.c}/${pd.t}
+          <span class="rating" style="color:${col};border:1px solid ${col}">${rate}</span></div>
+      </div>
+      <div class="meter"><i style="background:${col}"></i></div>`;
+    bd.appendChild(row);
+    requestAnimationFrame(()=>{row.querySelector(".meter > i").style.width=p+"%";});
+  });
+
+  /* rank up notice */
+  if(nowRank!==beforeRank){
+    $("rankUp").style.display="flex";
+    $("rankUpName").textContent="Promoted to "+nowRank;
+  } else {$("rankUp").style.display="none";}
+
+  /* review of missed */
+  const missed=session.answers.filter(a=>!a.chosenCorrect);
+  const rl=$("reviewList");rl.innerHTML="";
+  if(missed.length===0){
+    $("reviewBox").style.display="none";
+  } else {
+    $("reviewBox").style.display="block";
+    $("reviewBox").querySelector("summary").textContent=`Review ${missed.length} flagged item${missed.length>1?"s":""}`;
+    missed.forEach(a=>{
+      const correctText=a.q.o[a.q.a];
+      const it=document.createElement("div");it.className="ritem";
+      it.innerHTML=`<div class="rq"><span class="mono" style="color:var(--gold)">[${a.q.d}]</span> ${escapeHtml(a.q.q)}</div>
+        <div class="ra"><span class="x">✗ You: ${escapeHtml(a.chosenText)}</span><br>
+        <span class="ok">✓ Best: ${escapeHtml(correctText)}</span></div>
+        <div class="vbody" style="margin-top:8px;font-size:13px;color:var(--parchment-dim)">${a.q.e}</div>`;
+      rl.appendChild(it);
+    });
+  }
+  show("results");
+}
+function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+$("againBtn").addEventListener("click",()=>{
+  if(session.mode==="domain")startSession("domain",session.domain);
+  else startSession(session.mode);
+});
+$("homeBtn").addEventListener("click",()=>show("home"));
+</script>
+</body>
+</html>
